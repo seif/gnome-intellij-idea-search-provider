@@ -1,9 +1,9 @@
 {
-  "name": "gnome-intellij-idea-search-provider",
-  "version": "4",
-  "description": "Gnome Shell Search Provider for IntelliJ IDEA projects",
-  "repository": "https://github.com/lunaryorn/gnome-intellij-idea-search-provider.git",
-  "author": "Sebastian Wiesner <sebastian@swsnr.de>",
+  "name": "gnome-intellij-rider-search-provider",
+  "version": "1.0.0",
+  "description": "Gnome Shell Search Provider for IntelliJ Rider solutions",
+  "repository": "https://github.com/seif/gnome-intellij-rider-search-provider.git",
+  "author": "Seif Attar <iam@seifattar.net>",
   "license": "Apache-2.0",
   "private": true,
   "devDependencies": {
@@ -16,7 +16,7 @@
   },
   "scripts": {
     "compile": "tsc",
-    "package": "gnome-extensions pack --extra-source find-projects.py",
+    "package": "gnome-extensions pack --extra-source find-solutions.py",
     "format": "prettier *.ts *.json .eslintrc.json",
     "lint": "eslint *.ts",
     "run": "dbus-run-session -- gnome-shell --nested --wayland"

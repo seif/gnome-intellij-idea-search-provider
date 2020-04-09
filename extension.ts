@@ -60,37 +60,37 @@ const execCommand = (argv: ReadonlyArray<string>): Promise<string> =>
   });
 
 /**
- * Find the IDEA App.
+ * Find the Rider App.
  *
- * Currently only supports IDEA Ultimate installed from Snap Store.
+ * Currently only supports Rider Ultimate installed from Snap Store.
  */
-const findIDEA = (): imports.gi.Gio.DesktopAppInfo | null => {
+const findRider = (): imports.gi.Gio.DesktopAppInfo | null => {
   const candidates = [
     // Arch Linux AUR package
-    "jetbrains-idea.desktop",
+    "jetbrains-rider.desktop",
     // Snap installation
-    "intellij-idea-ultimate_intellij-idea-ultimate.desktop",
-    // Flatpak installation
-    "com.jetbrains.IntelliJ-IDEA-Ultimate.desktop"
+    "rider.desktop",
+    // Flatpak installation - this is just a guess of what it could be...
+    "com.jetbrains.IntelliJ-Rider.desktop"
   ];
   for (const desktopId of candidates) {
     const app = Gio.DesktopAppInfo.new(desktopId);
     if (app) {
-      l(`Found IntelliJ IDEA at ${desktopId}`);
+      l(`Found IntelliJ Rider at ${desktopId}`);
       return app;
     }
   }
   return null;
 };
 
-interface Project {
+interface Solution {
   /**
-   * The project identifier.
+   * The solution identifier.
    */
   readonly id: string;
 
   /**
-   * The project name.
+   * The solution name.
    */
   readonly name: string;
 
@@ -100,87 +100,91 @@ interface Project {
   readonly path: string;
 
   /**
-   * The absolute path to the project.
+   * The absolute path to the solution.
    */
   readonly abspath: string;
 }
 
-type ProjectMap = Map<string, Project>;
+type SolutionMap = Map<string, Solution>;
 
 /**
- * Lookup projects by their identifiers.
+ * Lookup solutions by their identifiers.
  *
- * @param projects Known projects
+ * @param solutions Known solutions
  * @param identifiers Identifiers to look for
- * @returns All projects from `projects` with any of the given `identifiers`.
+ * @returns All solutions from `solutions` with any of the given `identifiers`.
  */
-const lookupProjects = (
-  projects: ProjectMap,
+const lookupSolutions = (
+  solutions: SolutionMap,
   identifiers: ReadonlyArray<string>
-): Project[] => identifiers.map(projects.get).filter((p): p is Project => !!p);
+): Solution[] => {
+    return identifiers.map(i => {
+        return solutions.get(i);
+    }).filter((p): p is Solution => !!p);
+}
 
 /**
- * Whether the project matches all terms.
+ * Whether the solution matches all terms.
  *
- * Check whether the project matches all terms, by checking each term against
- * the project name and the readable project path.
+ * Check whether the solution matches all terms, by checking each term against
+ * the solution name and the readable solution path.
  *
- * @param {Project} project A project
+ * @param {Solution} solution A solution
  * @param {[string]} terms A list of search terms
- * @returns true if the project matches, false otherwise.
+ * @returns true if the solution matches, false otherwise.
  */
-const projectMatchesAllTerms = (
-  project: Project,
+const solutionMatchesAllTerms = (
+  solution: Solution,
   terms: ReadonlyArray<string>
 ): boolean =>
   terms.every(
-    term => project.name.includes(term) || project.path.includes(term)
+    term => solution.name.includes(term) || solution.path.includes(term)
   );
 
 /**
- * Find all projects from the given list of projects which match the terms.
+ * Find all solutions from the given list of solutions which match the terms.
  *
- * @param {[Project]} projects A list of project
+ * @param {[Solution]} solutions A list of solution
  * @param {[string]} terms A list of search terms
- * @returns A list of IDs of all projects out of `projects` which match `terms`.
+ * @returns A list of IDs of all solutions out of `solutions` which match `terms`.
  */
 const findMatchingIds = (
-  projects: ReadonlyArray<Project>,
+  solutions: ReadonlyArray<Solution>,
   terms: ReadonlyArray<string>
 ): string[] =>
-  projects.filter(p => projectMatchesAllTerms(p, terms)).map(p => p.id);
+  solutions.filter(p => solutionMatchesAllTerms(p, terms)).map(p => p.id);
 
 /**
- * Launch IDEA or show an error notification on failure.
+ * Launch Rider or show an error notification on failure.
  *
- * @param idea Desktop App Info for IDEA
- * @param files Files to launch IDEA with
+ * @param rider Desktop App Info for Rider
+ * @param files Files to launch Rider with
  */
-const launchIDEAInShell = (
-  idea: imports.gi.Gio.DesktopAppInfo,
+const launchRiderInShell = (
+  rider: imports.gi.Gio.DesktopAppInfo,
   files?: imports.gi.Gio.File[]
 ): void => {
   try {
-    idea.launch(files || [], null);
+    rider.launch(files || [], null);
   } catch (err) {
-    imports.ui.main.notifyError("Failed to launch IntelliJ IDEA", err.message);
+    imports.ui.main.notifyError("Failed to launch IntelliJ Rider", err.message);
   }
 };
 
 /**
- * Create result meta info for a project.
+ * Create result meta info for a solution.
  *
- * @param idea The IDEA app info
- * @returns A function with creates result metadata for a given project.
+ * @param rider The Rider app info
+ * @returns A function with creates result metadata for a given solution.
  */
-const resultMetaForProject = (idea: imports.gi.Gio.DesktopAppInfo) => (
-  project: Project
+const resultMetaForSolution = (rider: imports.gi.Gio.DesktopAppInfo) => (
+  solution: Solution
 ): ResultMeta => ({
-  id: project.id,
-  name: project.name,
-  description: project.path,
+  id: solution.id,
+  name: solution.name,
+  description: solution.path,
   createIcon: (size): imports.gi.St.Icon | null => {
-    const gicon = idea.get_icon();
+    const gicon = rider.get_icon();
     if (gicon) {
       return new St.Icon({
         gicon,
@@ -194,60 +198,68 @@ const resultMetaForProject = (idea: imports.gi.Gio.DesktopAppInfo) => (
 });
 
 /**
- * Create a search provider for IDEA projects.
+ * Create a search provider for Rider solutions.
  *
- * The project exposes the given projects for search.  On activation it uses the
- * given IDEA app to open projects.
+ * The solution exposes the given solutions for search.  On activation it uses the
+ * given Rider app to open solutions.
  *
  * On search provider activation, that is, when the user clicks on the search
- * provider icon to resume search in the app, it merely opens IDEA without any
- * projects, since IDEA doesn't provide an interface start a recent projects
- * search within IDEA.
+ * provider icon to resume search in the app, it merely opens Rider without any
+ * solutions, since Rider doesn't provide an interface start a recent solutions
+ * search within Rider.
  *
- * @param projects The project to search in
- * @param idea The IntelliJ IDEA application info
+ * @param solutions The solution to search in
+ * @param rider The IntelliJ Rider application info
  */
 const createProvider = (
-  projects: ProjectMap,
-  idea: imports.gi.Gio.DesktopAppInfo
+  solutions: SolutionMap,
+  rider: imports.gi.Gio.DesktopAppInfo
 ): SearchProvider => ({
   id: Self.uuid,
   isRemoteProvider: false,
   canLaunchSearch: true,
-  appInfo: idea,
+  appInfo: rider,
   getInitialResultSet: (terms, callback): void =>
-    callback(findMatchingIds([...projects.values()], terms)),
+    callback(findMatchingIds([...solutions.values()], terms)),
   getSubsearchResultSet: (current, terms, callback): void =>
-    callback(findMatchingIds(lookupProjects(projects, current), terms)),
+    callback(findMatchingIds(lookupSolutions(solutions, current), terms)),
   getResultMetas: (ids, callback): void =>
-    callback(lookupProjects(projects, ids).map(resultMetaForProject(idea))),
-  launchSearch: (): void => launchIDEAInShell(idea),
+    callback(lookupSolutions(solutions, ids).map(resultMetaForSolution(rider))),
+  launchSearch: (): void => launchRiderInShell(rider),
   activateResult: (id: string): void => {
-    const project = projects.get(id);
-    if (project) {
-      launchIDEAInShell(idea, [Gio.File.new_for_path(project.abspath)]);
+    const solution = solutions.get(id);
+    if (solution) {
+      launchRiderInShell(rider, [Gio.File.new_for_path(solution.abspath)]);
     }
   },
   filterResults: (results, max): string[] => results.slice(0, max)
 });
 
 /**
- * Find all recent projects.
+ * Find all recent solutions.
  *
  * @param extensionDirectory The directory of this extension
- * @returns A promise with all recent IDEA projects.
+ * @returns A promise with all recent Rider solutions.
  */
-const recentProjects = (
+const recentSolutions = (
   extensionDirectory: imports.gi.Gio.File
-): Promise<ProjectMap> => {
-  const helper = extensionDirectory.get_child("find-projects.py").get_path();
+): Promise<SolutionMap> => {
+  const helper = extensionDirectory.get_child("find-solutions.py").get_path();
   if (!helper) {
-    return Promise.reject(new Error("Helper find-projects.py doesn't exist!"));
+    return Promise.reject(new Error("Helper find-solutions.py doesn't exist!"));
   } else {
-    l(`Running Python helper ${helper} to discover IntelliJ IDEA projects`);
-    return execCommand(["python3", helper]).then(
-      output => new Map(Object.entries(JSON.parse(output)))
-    );
+    l(`Running Python helper ${helper} to discover IntelliJ Rider solutions`);
+    return execCommand(["python3", helper]).then(output => {
+        const json = JSON.parse(output);
+        const entries = Object.entries(json);
+        var solutions = new Map<string, Solution>();
+
+        for ( const [ id, sol ] of entries ) {
+            solutions.set(id, <Solution>sol);
+        }
+
+        return solutions;
+    });
   }
 };
 
@@ -263,20 +275,21 @@ function init(): ExtensionState {
   // eslint-disable-next-line immutable/no-let
   let registeredProvider: RegisteredProvider = "unregistered";
 
+  l("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
   return {
     enable: (): void => {
       if (registeredProvider === "unregistered") {
         l(`enabling version ${Self.metadata.version}`);
-        const idea = findIDEA();
-        if (idea) {
+        const rider = findRider();
+        if (rider) {
           registeredProvider = "registering";
-          recentProjects(Self.dir).then(
-            projects => {
+          recentSolutions(Self.dir).then(
+            solutions => {
               if (registeredProvider === "registering") {
                 // If the user hasn't disabled the extension meanwhile create the
                 // search provider and registered it, both in our global variable
                 // and for gnome shell.
-                registeredProvider = createProvider(projects, idea);
+                registeredProvider = createProvider(solutions, rider);
                 Main.overview.viewSelector._searchResults._registerProvider(
                   registeredProvider
                 );
@@ -287,7 +300,7 @@ function init(): ExtensionState {
               // error message.
               if (registeredProvider === "registering") {
                 Main.notifyError(
-                  "Failed to find recent projects",
+                  "Failed to find recent solutions",
                   error.message
                 );
               }
@@ -295,8 +308,8 @@ function init(): ExtensionState {
           );
         } else {
           Main.notifyError(
-            "IntelliJ IDEA not found",
-            "Consider reporting on https://github.com/lunaryorn/gnome-intellij-idea-search-provider/issues/2"
+            "IntelliJ Rider not found",
+            "Consider reporting on https://github.com/seif/gnome-intellij-rider-search-provider/issues/"
           );
         }
       }

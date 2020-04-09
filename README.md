@@ -1,6 +1,6 @@
-# Gnome shell search provider for Intellij IDEA projects
+# Gnome shell search provider for Intellij Rider projects
 
-A Gnome shell extension to find recent IntelliJ IDEA projects in search.
+A Gnome shell extension to find recent IntelliJ Rider projects in search.
 
 ## Requirements
 
@@ -14,27 +14,23 @@ Install via [Gnome Extensions][gexts].
 Alternatively download the latest `.shell-extension.zip` from [Releases] and run
 
 ```console
-$ gnome-extensions install intellij-idea-search-provider@swsnr.de.shell-extension.zip
+gnome-extensions install intellij-rider-search-provider@seifattar.net.shell-extension.zip
 ```
 
 **Note:** Version numbers from Gnome Extensions and Releases differ, because
 uploading to Gnome Extensions renumbers releases. If you switch between
 installation methods, remove and reinstall.
 
-[gexts]: https://extensions.gnome.org/extension/2341/intellij-idea-search-provider/
-[releases]: https://github.com/lunaryorn/gnome-intellij-idea-search-provider/releases
+[gexts]: https://extensions.gnome.org/extension/2341/intellij-rider-search-provider/
+[releases]: https://github.com/lunaryorn/gnome-intellij-rider-search-provider/releases
 
 ## Limitations
 
 - I do not know how to parse XML in GJS, so finding recent IntelliJ projects
   relies on a Python helper which parses `recentProjects.xml` and outputs
   relevant parts as JSON (see [GH-1]).
-- I use Ultimate, so this extension only supports IDEA Ultimate, installed with
-  `snap`, `flatpak` or from AUR. Pull requests for Community and Toolbox
-  welcome, see [GH-2].
 
-[gh-1]: https://github.com/lunaryorn/gnome-intellij-idea-search-provider/issues/1
-[gh-2]: https://github.com/lunaryorn/gnome-intellij-idea-search-provider/issues/2
+[gh-1]: https://github.com/lunaryorn/gnome-intellij-rider-search-provider/issues/1
 
 ## Credits
 

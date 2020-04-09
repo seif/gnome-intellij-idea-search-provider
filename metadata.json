@@ -1,8 +1,8 @@
 {
-  "uuid": "intellij-idea-search-provider@swsnr.de",
-  "name": "IntelliJ IDEA Search Provider",
-  "description": "Search recent IDEA projects in Gnome shell",
-  "version": 4,
+  "uuid": "intellij-rider-search-provider@seifattar.net",
+  "name": "IntelliJ Rider  Search Provider",
+  "description": "Search recent Rider solutions in Gnome shell",
+  "version": 1,
   "shell-version": ["3.36"],
-  "url": "https://github.com/lunaryorn/gnome-intellij-idea-search-provider"
+  "url": "https://github.com/seif/gnome-intellij-rider-search-provider"
 }
